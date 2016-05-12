@@ -1,4 +1,4 @@
-gochatserver
+sgjdt_golang_battle
 ============
 
-go语言 聊天服务器
+三国进度条 战斗过程 通过go语言模拟计算
