@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
+	"os"
 	//"time"
 )
 
@@ -19,6 +20,7 @@ type GameManage struct {
 	battleFunction       func()
 	fightStatus          int
 	bout                 int
+	b                    int
 }
 
 var RandomCoefficientDic = map[int]float64{
@@ -51,6 +53,7 @@ func NewGame(a int, b int) *GameManage {
 
 	//code0 := "孙权,30,185,19,185,185,185,323,334,12,70,335,19,81,33,192,65,263,27,341,342,342,342,343,344,344,344,5285"
 	//code1 := "袁绍,29,175,18,175,175,175,241,237,60,26,214,219,267,260,332,13,10,152,333,341,341,341,342,344,344,344,5508"
+
 	code0 := PlayerData[a].Code
 	code1 := PlayerData[b].Code
 	gm.battleArray[0].decipher(code0)
@@ -60,15 +63,12 @@ func NewGame(a int, b int) *GameManage {
 }
 
 func (gm *GameManage) Start() {
-	//fmt.Printf("cfg Soldier %v\n", gm.Cfg.Soldier)
-	//fmt.Printf("cfg Equip %v\n", gm.Cfg.Equip)
+	debug("cfg SoldierData %v\n", SoldierData)
+	debug("cfg EquipData %v\n", EquipData)
+	debug("cfg PlayerData %v\n", PlayerData)
 
-	//fmt.Printf("cfg SoldierData %v\n", SoldierData)
-	//fmt.Printf("cfg EquipData %v\n", EquipData)
-	//fmt.Printf("cfg PlayerData %v\n", PlayerData)
-
-	//fmt.Printf("battleArray 0 %s \n", gm.battleArray[0].Name)
-	//fmt.Printf("battleArray 1 %s \n", gm.battleArray[1].Name)
+	debug("battleArray 0 %s \n", gm.battleArray[0].Name)
+	debug("battleArray 1 %s \n", gm.battleArray[1].Name)
 
 	//	for {
 	//		gm.playerFighting()
@@ -86,26 +86,27 @@ func (gm *GameManage) Start() {
 
 	gm.attackerNumber = 0
 	gm.defenderNumber = 0
-	fmt.Printf("Start defenderNumber#%d \n", gm.defenderNumber)
+	debug("Start defenderNumber#%d \n", gm.defenderNumber)
 	gm.switchBattleState(BATTLE_STATE_FIGHTING)
 	gm.fightStatus = 0
 
 	gm.bout = 0
+	gm.b = 0
 	for {
-		fmt.Printf("轮换#%d=>", gm.bout)
+		show("轮换#%d=>", gm.bout)
 		gm.playerFighting()
-		//fmt.Printf("\n")
+		debug("\n")
 		gm.bout++
 		if gm.fightStatus == 1 {
 			break
 		}
 	}
 
-	fmt.Printf("战斗结束 总回合数#%d\n", gm.bout)
+	show("战斗结束 总回合数#%d\n", gm.bout)
 }
 
 func (gm *GameManage) battleStateFighting() {
-	//fmt.Printf("[%d] 开始计算战斗\n", gm.bout)
+	debug("[%d] 开始计算战斗\n", gm.bout)
 	if gm.battleArray[0].IsAllDead() {
 		fmt.Printf("%s 的部队 获得胜利\n", gm.battleArray[1].Name)
 		gm.fightStatus = 1
@@ -114,7 +115,7 @@ func (gm *GameManage) battleStateFighting() {
 		gm.fightStatus = 1
 	} else {
 		for {
-			//fmt.Printf("battleStateFighting 行动方:%d 行动部队:%d\n", gm.actionTargetNumber, gm.actionLegionNumber)
+			debug("battleStateFighting 行动方:%d 行动部队:%d\n", gm.actionTargetNumber, gm.actionLegionNumber)
 
 			if gm.isAllDead(gm.actionTargetNumber, gm.actionLegionNumber) {
 				gm.getNextActionTarget()
@@ -122,7 +123,7 @@ func (gm *GameManage) battleStateFighting() {
 			}
 			break
 		}
-		//fmt.Printf("2===========================开始行动方:%s\n", SoldierType[gm.actionLegionNumber])
+		debug("2===========================开始行动方:%s\n", SoldierType[gm.actionLegionNumber])
 
 		switch gm.actionLegionNumber { //检查行动兵种为哪一种
 		case 0: //刀兵行动
@@ -137,27 +138,28 @@ func (gm *GameManage) battleStateFighting() {
 
 		if gm.actionLegionNumber != 3 || gm.battleArray[gm.actionTargetNumber].RiderLegionState == RIDER_STATE_FAITING {
 			if gm.defenderLegionNumber != -1 {
-				fmt.Print(" 攻击防御士兵重置 ")
+				//fmt.Print(" 攻击防御士兵重置 ")
 				gm.switchBattleState(BATTLE_STATE_LOCALFIGHTIONG)
 				gm.attackerNumber = 0
 				gm.defenderNumber = 0
-				fmt.Printf("battleStateFighting defenderNumber#%d \n", gm.defenderNumber)
+				debug("battleStateFighting defenderNumber#%d 部队:%d \n", gm.defenderNumber, gm.defenderLegionNumber)
 			} else {
-				fmt.Print(" 防御方兵种全挂了 ")
+				//fmt.Print(" 防御方兵种全挂了 ")
 				gm.getNextActionTarget()
 			}
 		} else if gm.battleArray[gm.actionTargetNumber].RiderLegionState == RIDER_STATE_OUTFLANK || gm.battleArray[gm.actionTargetNumber].RiderLegionState == RIDER_STATE_ASSAULT {
-			fmt.Print(" 状态[迂回|冲锋] ")
+			//fmt.Print(" 状态[迂回|冲锋] ")
 			gm.getNextActionTarget()
 		}
-		fmt.Println("战斗状态执行结束")
+		show("\n")
+		debug("战斗状态执行结束")
 	}
 }
 
 //攻击
 func (gm *GameManage) battleStateLocalFighting() {
 
-	//fmt.Printf("攻击方:%d 攻击兵种:%d 攻击士兵:%d 防御兵种:%d 防御士兵:%d\n", gm.actionTargetNumber, gm.actionLegionNumber, gm.attackerNumber, gm.defenderLegionNumber, gm.defenderNumber)
+	debug("攻击方:%d 攻击兵种:%d 攻击士兵:%d 防御兵种:%d 防御士兵:%d\n", gm.actionTargetNumber, gm.actionLegionNumber, gm.attackerNumber, gm.defenderLegionNumber, gm.defenderNumber)
 
 	soldier1 := new(Soldier)
 	soldier2 := new(Soldier)
@@ -167,10 +169,10 @@ func (gm *GameManage) battleStateLocalFighting() {
 		if gm.attackerNumber == 5 {
 			gm.attackerNumber = 0
 		}
-		//fmt.Printf("1.切换攻击方的士兵#%d \n", gm.attackerNumber)
+		debug("1.切换攻击方的士兵#%d \n", gm.attackerNumber)
 		soldier1 = gm.battleArray[gm.actionTargetNumber].Army[gm.actionLegionNumber][gm.attackerNumber]
-		//fmt.Printf("soldier1 部队：%v\n", soldier1)
-		//fmt.Printf("soldier1 部队：%s\n", soldier1.Name)
+		debug("soldier1 部队：%v\n", soldier1)
+		debug("soldier1 部队：%s\n", soldier1.Name)
 		if soldier1.Life > 0 {
 			break
 		}
@@ -181,13 +183,12 @@ func (gm *GameManage) battleStateLocalFighting() {
 		if gm.defenderNumber == 5 {
 			gm.defenderNumber = 0
 		}
-		fmt.Printf("battleStateLocalFighting defenderNumber#%d \n", gm.defenderNumber)
+		debug("battleStateLocalFighting defenderNumber#%d \n", gm.defenderNumber)
 
-		//fmt.Printf("1.切换防御方的士兵#%d \n", gm.defenderNumber)
+		debug("1.切换防御方的士兵#%d \n", gm.defenderNumber)
 		soldier2 = gm.battleArray[1-gm.actionTargetNumber].Army[gm.defenderLegionNumber][gm.defenderNumber]
-		//fmt.Printf("soldier2 部队：%v\n", soldier2)
-		//fmt.Printf("soldier2 部队：%s\n", soldier2.Name)
-		//fmt.Printf("soldier2.Life：%0.2f  gm.defenderNumber:%d  %d\n", soldier2.Life, gm.defenderNumber, tmp)
+		debug("soldier2 部队：%v\n", soldier2)
+		debug("soldier2 部队：%s Life：%0.2f,defenderLegionNumber:%d  gm.defenderNumber:%d\n", soldier2.Name, soldier2.Life, gm.defenderLegionNumber, gm.defenderNumber)
 		if soldier2.Life > 0 {
 			break
 		}
@@ -198,12 +199,12 @@ func (gm *GameManage) battleStateLocalFighting() {
 
 	hurtNum := soldier1.Power * ArmsPlus[gm.actionLegionNumber][gm.defenderLegionNumber] * gm.randomCoefficient() * math.Pow(1.05, gm.battleArray[gm.actionTargetNumber].InitPower-15)
 
-	//fmt.Printf("====  %0.2f, %0.2f, %0.2f, %0.2f\n", soldier1.Power, ArmsPlus[gm.actionLegionNumber][gm.defenderLegionNumber], gm.randomCoefficient(), math.Pow(1.05, gm.battleArray[gm.actionTargetNumber].InitPower-15))
+	debug("====  %0.2f, %0.2f, %0.2f, %0.2f\n", soldier1.Power, ArmsPlus[gm.actionLegionNumber][gm.defenderLegionNumber], gm.randomCoefficient(), math.Pow(1.05, gm.battleArray[gm.actionTargetNumber].InitPower-15))
 	soldier2.Hurt(hurtNum)
-	fmt.Printf("%s(%s)[%s#%d] 攻击 %s(%s)[%s#%d] (%d)造成了 %0.2f 点伤害.\n", gm.battleArray[gm.actionTargetNumber].Name, soldier1.Name, SoldierType[gm.actionLegionNumber], gm.attackerNumber, gm.battleArray[1-gm.actionTargetNumber].Name, soldier2.Name, SoldierType[gm.defenderLegionNumber], gm.defenderNumber, int(soldier2.Life), hurtNum)
+	show("%s(%s)[%s#%d] 攻击 %s(%s)[%s#%d] (%d)造成了 %0.2f 点伤害.\n", gm.battleArray[gm.actionTargetNumber].Name, soldier1.Name, SoldierType[gm.actionLegionNumber], gm.attackerNumber, gm.battleArray[1-gm.actionTargetNumber].Name, soldier2.Name, SoldierType[gm.defenderLegionNumber], gm.defenderNumber, int(soldier2.Life), hurtNum)
 
 	if gm.isAllDead(1-gm.actionTargetNumber, gm.defenderLegionNumber) || gm.isActionOver() {
-		//fmt.Printf("=======================【行动结束 切换目标】===========================\n")
+		debug("=======================【行动结束 切换目标】===========================\n")
 		gm.switchBattleState(BATTLE_STATE_FIGHTING)
 		gm.getNextActionTarget()
 	}
@@ -218,7 +219,7 @@ func (gm *GameManage) getRandomValue() {
 		gm.randomValue[i] = float64(rand.Intn(7))
 	}
 
-	//fmt.Printf("getRandomValue %v\n", gm.randomValue)
+	debug("getRandomValue %v\n", gm.randomValue)
 }
 
 func (gm *GameManage) sumRandomValue() int {
@@ -230,12 +231,12 @@ func (gm *GameManage) sumRandomValue() int {
 }
 
 func (gm *GameManage) playerFighting() {
-	//fmt.Printf("battleFunction %v\n", &gm.battleFunction)
+	debug("battleFunction %v\n", &gm.battleFunction)
 	gm.battleFunction()
 }
 
 func (gm *GameManage) switchBattleState(t int) {
-	//fmt.Printf("switchBattleState %d\n", t)
+	debug("switchBattleState %d\n", t)
 	switch t {
 
 	case BATTLE_STATE_TRAP:
@@ -289,7 +290,7 @@ func (gm *GameManage) battleStateRecover() {
 func (gm *GameManage) isActionOver() bool {
 
 	n := gm.attackerNumber
-	//fmt.Printf("isActionOver %d\n", gm.attackerNumber+1)
+	debug("isActionOver %d\n", gm.attackerNumber+1)
 	for {
 		n++
 		if n >= len(gm.battleArray[gm.actionTargetNumber].Army[gm.actionLegionNumber]) {
@@ -306,7 +307,7 @@ func (gm *GameManage) isActionOver() bool {
 
 //寻找刀盾兵目标
 func (gm *GameManage) switchSaberLegionTarget() {
-	//fmt.Printf("行动方:%d 寻找刀盾兵目标\n", gm.actionTargetNumber)
+	debug("行动方:%d 寻找刀盾兵目标\n", gm.actionTargetNumber)
 	target := 1 - gm.actionTargetNumber //目标
 	gm.defenderLegionNumber = -1        //表示该兵种全挂了
 	if !gm.isAllDead(target, 0) {
@@ -320,17 +321,17 @@ func (gm *GameManage) switchSaberLegionTarget() {
 		gm.battleArray[target].RiderLegionState == RIDER_STATE_BREAK { //骑兵破阵状态
 		gm.defenderLegionNumber = 3 //防御方为骑兵
 	}
-	//fmt.Printf("行动方:刀盾兵=>防御方兵种:%d \n", gm.defenderLegionNumber)
+	debug("行动方:刀盾兵=>防御方兵种:%d \n", gm.defenderLegionNumber)
 }
 
 //寻找长枪兵目标
 func (gm *GameManage) switchLancerLegionTarget() {
-	//fmt.Printf("行动方:%d 寻找长枪兵目标\n", gm.actionTargetNumber)
+	debug("行动方:%d 寻找长枪兵目标\n", gm.actionTargetNumber)
 	target := 1 - gm.actionTargetNumber
 	gm.defenderLegionNumber = -1 //表示改兵种全挂了
 
-	if !gm.isAllDead(target, 3) && gm.battleArray[target].RiderLegionState == RIDER_STATE_FAITING || gm.battleArray[target].RiderLegionState == RIDER_STATE_BREAK {
-		gm.defenderLegionNumber = 3 //防御方为骑兵
+	if !gm.isAllDead(target, 3) && (gm.battleArray[target].RiderLegionState == RIDER_STATE_FAITING || gm.battleArray[target].RiderLegionState == RIDER_STATE_BREAK) {
+		gm.defenderLegionNumber = 3 //防御方骑兵未全死亡 状态为离开和破阵  防御方为骑兵
 	} else if !gm.isAllDead(target, 0) {
 		gm.defenderLegionNumber = 0 //防御方为刀兵
 	} else if !gm.isAllDead(target, 1) {
@@ -338,55 +339,53 @@ func (gm *GameManage) switchLancerLegionTarget() {
 	} else if !gm.isAllDead(target, 2) {
 		gm.defenderLegionNumber = 2 //防御方为弓兵
 	}
-	//fmt.Printf("行动方:长枪兵=>防御方兵种:%d \n", gm.defenderLegionNumber)
+	debug("行动方:长枪兵=>防御方兵种:%d \n", gm.defenderLegionNumber)
 }
 
 //寻找弓箭兵目标
 func (gm *GameManage) switchArcherLegionTarget() {
-	//fmt.Printf("行动方:%d 寻找弓箭兵目标 \n", gm.actionTargetNumber)
+	debug("行动方:%d 寻找弓箭兵目标 \n", gm.actionTargetNumber)
 	target := 1 - gm.actionTargetNumber
 
 	for {
 		legion := rand.Intn(4)
 		gm.defenderLegionNumber = legion
-		//fmt.Printf("3=================isAllDead:%d=>%d \n", target, legion)
+		debug("3=================isAllDead:%d=>%d \n", target, legion)
 		if !gm.isAllDead(target, legion) {
 			break
 		}
 	}
-	//fmt.Printf("行动方:弓箭兵=>防御方兵种:%d \n", gm.defenderLegionNumber)
+	debug("行动方:弓箭兵=>防御方兵种:%d \n", gm.defenderLegionNumber)
 }
 
 //寻找骑兵目标
 func (gm *GameManage) switchRiderLegionTarget() {
-	//fmt.Printf("行动方:%d  寻找骑兵目标 \n", gm.actionTargetNumber)
+	debug("行动方:%d  寻找骑兵目标 \n", gm.actionTargetNumber)
 	gm.switchRiderLegionState()
-	//fmt.Printf("行动方:%d  骑兵状态:%d \n", gm.actionTargetNumber, gm.battleArray[gm.actionTargetNumber].RiderLegionState)
+	debug("行动方:%d  骑兵状态:%d \n", gm.actionTargetNumber, gm.battleArray[gm.actionTargetNumber].RiderLegionState)
 	switch gm.battleArray[gm.actionTargetNumber].RiderLegionState {
 	case RIDER_STATE_OUTFLANK:
-		fmt.Printf("%s的%s正在迂回\n", gm.battleArray[gm.actionTargetNumber].Name, SoldierType[gm.actionLegionNumber])
 		gm.getRandomValue()
 		gm.battleArray[gm.actionTargetNumber].dashPower += 2 * float64(gm.sumRandomValue())
-		fmt.Printf("冲刺优势增加了%d。\n", 2*gm.sumRandomValue())
+		show("%s的%s正在【迂回】！冲刺优势增加了%d。\n", gm.battleArray[gm.actionTargetNumber].Name, SoldierType[gm.actionLegionNumber], 2*gm.sumRandomValue())
 	case RIDER_STATE_ASSAULT:
-		fmt.Printf("%s的%s发起了冲锋！\n", gm.battleArray[gm.actionTargetNumber].Name, SoldierType[gm.actionLegionNumber])
 		gm.getRandomValue()
 		gm.battleArray[gm.actionTargetNumber].dashPower += 3 * float64(gm.sumRandomValue())
-		fmt.Printf("冲刺优势增加了%d。\n", 3*gm.sumRandomValue())
+		show("%s的%s发起了【冲锋】！冲刺优势增加了%d。\n", gm.battleArray[gm.actionTargetNumber].Name, SoldierType[gm.actionLegionNumber], 3*gm.sumRandomValue())
 	case RIDER_STATE_BREAK:
 		gm.switchArcherLegionTarget()
-		fmt.Printf("%s的%s冲入了敌人的%s中！！【破阵】\n", gm.battleArray[gm.actionTargetNumber].Name, SoldierType[gm.actionLegionNumber], SoldierType[gm.defenderLegionNumber])
+		show("%s的%s冲入了敌人的%s中！【破阵】\n", gm.battleArray[gm.actionTargetNumber].Name, SoldierType[gm.actionLegionNumber], SoldierType[gm.defenderLegionNumber])
 		gm.getRandomValue()
 		gm.switchBattleState(BATTLE_STATE_AOEFIGHTING)
 		gm.attackerNumber = 0
 		gm.defenderNumber = 0
-		fmt.Printf("switchRiderLegionTarget defenderNumber#%d \n", gm.defenderNumber)
+		debug("switchRiderLegionTarget defenderNumber#%d \n", gm.defenderNumber)
 	case RIDER_STATE_FAITING:
 		gm.switchArcherLegionTarget()
 		gm.battleArray[gm.actionTargetNumber].dashPower = 0
 
 	}
-	//fmt.Printf("骑兵=>防御方:%d \n", gm.defenderLegionNumber)
+	debug("骑兵=>防御方:%d \n", gm.defenderLegionNumber)
 }
 
 //骑兵状态更新
@@ -395,8 +394,8 @@ func (gm *GameManage) switchRiderLegionState() {
 	n := gm.battleArray[gm.actionTargetNumber].RiderLegionState
 	//r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	rnd := rand.Float64()
-	//fmt.Printf("switchRiderLegionState==rnd:%0.2f \n", rnd)
-	//fmt.Printf("switchRiderLegionState==n:%d  => %v \n", n, RiderLegionState[n])
+	debug("switchRiderLegionState==rnd:%0.2f \n", rnd)
+	debug("switchRiderLegionState==n:%d  => %v \n", n, RiderLegionState[n])
 
 	state := 0
 	for _, v := range RiderLegionState[n] {
@@ -407,20 +406,20 @@ func (gm *GameManage) switchRiderLegionState() {
 		state++
 	}
 
-	//fmt.Printf("switchRiderLegionState==state:%d \n", state)
+	debug("switchRiderLegionState==state:%d \n", state)
 
 	gm.battleArray[gm.actionTargetNumber].RiderLegionState = state
 }
 
 func (gm *GameManage) isAllDead(target int, legion int) bool {
-	//fmt.Printf("=================isAllDead: 目标:%d  部队%d Start\n", target, legion)
+	debug("=================isAllDead: 目标:%d  部队%d Start\n", target, legion)
 	for _, v := range gm.battleArray[target].Army[legion] {
 		if !v.IsDead() {
 			return false
 		}
-		//fmt.Printf("=================v.Life:%d \n", v.Life)
+		debug("=================v.Life:%d \n", v.Life)
 	}
-	//fmt.Printf("=================isAllDead: 目标:%d  部队%d AllDead\n", target, legion)
+	debug("=================isAllDead: 目标:%d  部队%d AllDead\n", target, legion)
 
 	return true
 }
@@ -431,7 +430,7 @@ func (gm *GameManage) Close() {
 
 //获取下一个攻击目标
 func (gm *GameManage) getNextActionTarget() {
-	//fmt.Printf("开始===========================行动方:%d 行动兵种:%d===========================\n", gm.actionTargetNumber, gm.actionLegionNumber)
+	show("%d开始===========================行动方:%d 行动兵种:%d===========================\n", gm.b, gm.actionTargetNumber, gm.actionLegionNumber)
 	if gm.actionTargetNumber == 0 { //切换目标
 		gm.actionTargetNumber = 1
 	} else {
@@ -442,7 +441,8 @@ func (gm *GameManage) getNextActionTarget() {
 			gm.actionLegionNumber++ //下一个 行动兵种
 		}
 	}
-	//fmt.Printf("结束===========================行动方:%d 行动兵种:%d===========================\n", gm.actionTargetNumber, gm.actionLegionNumber)
+	gm.b++
+	debug("结束===========================行动方:%d 行动兵种:%d===========================\n", gm.actionTargetNumber, gm.actionLegionNumber)
 }
 
 //范围攻击
@@ -451,11 +451,11 @@ func (gm *GameManage) battleStateAoeFighting() {
 	soldier1 := new(Soldier)
 	soldier2 := new(Soldier)
 
-	fmt.Printf("battleStateAoeFighting attackerNumber#%d \n", gm.attackerNumber)
-	fmt.Printf("battleStateAoeFighting defenderNumber#%d \n", gm.defenderNumber)
+	debug("battleStateAoeFighting attackerNumber#%d \n", gm.attackerNumber)
+	debug("battleStateAoeFighting defenderNumber#%d \n", gm.defenderNumber)
 	for gm.battleArray[gm.actionTargetNumber].Army[gm.actionLegionNumber][gm.attackerNumber].Life == 0 {
 		gm.attackerNumber++
-		fmt.Printf("battleStateAoeFighting attackerNumber#%d,%d,%0.2f \n", gm.actionLegionNumber, gm.attackerNumber, gm.battleArray[gm.actionTargetNumber].Army[gm.actionLegionNumber][gm.attackerNumber].Life)
+		debug("battleStateAoeFighting attackerNumber#%d,%d,%0.2f \n", gm.actionLegionNumber, gm.attackerNumber, gm.battleArray[gm.actionTargetNumber].Army[gm.actionLegionNumber][gm.attackerNumber].Life)
 	}
 
 	//	for _, v := range gm.battleArray[gm.actionTargetNumber].Army[gm.actionLegionNumber] {
@@ -470,7 +470,7 @@ func (gm *GameManage) battleStateAoeFighting() {
 
 	for gm.battleArray[1-gm.actionTargetNumber].Army[gm.defenderLegionNumber][gm.defenderNumber].Life == 0 {
 		gm.defenderNumber++
-		fmt.Printf("battleStateAoeFighting defenderLegionNumber#%d,%d,%0.2f \n", gm.defenderLegionNumber, gm.defenderNumber, gm.battleArray[1-gm.actionTargetNumber].Army[gm.defenderLegionNumber][gm.defenderNumber].Life)
+		debug("battleStateAoeFighting defenderLegionNumber#%d,%d,%0.2f \n", gm.defenderLegionNumber, gm.defenderNumber, gm.battleArray[1-gm.actionTargetNumber].Army[gm.defenderLegionNumber][gm.defenderNumber].Life)
 	}
 
 	//	for _, v := range gm.battleArray[1-gm.actionTargetNumber].Army[gm.defenderLegionNumber] {
@@ -490,7 +490,7 @@ func (gm *GameManage) battleStateAoeFighting() {
 
 	hurtNum *= 1 + gm.battleArray[gm.actionTargetNumber].dashPower/100
 
-	fmt.Printf("%s 冲刺攻击 %s! 造成了 %0.2f 点伤害。\n", soldier1.Name, soldier2.Name, hurtNum)
+	show("%s 冲刺攻击 %s! 造成了 %0.2f 点伤害。\n", soldier1.Name, soldier2.Name, hurtNum)
 
 	soldier2.Hurt(hurtNum)
 
@@ -501,15 +501,15 @@ func (gm *GameManage) battleStateAoeFighting() {
 		for {
 
 			gm.defenderNumber++
-			fmt.Printf("battleStateAoeFighting defenderNumber#%d \n", gm.defenderNumber)
-			fmt.Printf("2.切换防御方的士兵#%d => %d \n", gm.defenderNumber, len(gm.battleArray[1-gm.actionTargetNumber].Army[gm.defenderLegionNumber]))
+			debug("battleStateAoeFighting defenderNumber#%d \n", gm.defenderNumber)
+			debug("2.切换防御方的士兵#%d => %d \n", gm.defenderNumber, len(gm.battleArray[1-gm.actionTargetNumber].Army[gm.defenderLegionNumber]))
 			if gm.defenderNumber >= len(gm.battleArray[1-gm.actionTargetNumber].Army[gm.defenderLegionNumber])-1 {
 				gm.defenderNumber = 0
-				fmt.Printf("battleStateAoeFighting defenderNumber#%d \n", gm.defenderNumber)
-				fmt.Printf("3.切换防御方的士兵#%d \n", gm.defenderNumber)
+				debug("battleStateAoeFighting defenderNumber#%d \n", gm.defenderNumber)
+				debug("3.切换防御方的士兵#%d \n", gm.defenderNumber)
 				for {
 					gm.attackerNumber++
-					fmt.Printf("3.切换攻击方的士兵#%d \n", gm.attackerNumber)
+					debug("3.切换攻击方的士兵#%d \n", gm.attackerNumber)
 					if gm.attackerNumber >= len(gm.battleArray[gm.actionTargetNumber].Army[gm.actionLegionNumber])-1 {
 						break
 					}
@@ -528,4 +528,13 @@ func (gm *GameManage) battleStateAoeFighting() {
 		}
 	}
 
+}
+
+func debug(format string, a ...interface{}) (n int, err error) {
+	//return fmt.Fprintf(os.Stdout, format, a...)
+	return 0, nil
+}
+
+func show(format string, a ...interface{}) (n int, err error) {
+	return fmt.Fprintf(os.Stdout, format, a...)
 }

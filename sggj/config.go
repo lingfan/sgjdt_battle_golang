@@ -76,7 +76,11 @@ func (cfg *Config) parseSoldier(file string) error {
 		return err
 	}
 
-	for _, line := range lines {
+	for i, line := range lines {
+		if i == 0 {
+			continue
+		}
+
 		id, err := strconv.Atoi(line[0])
 		if err != nil {
 			return err
@@ -129,7 +133,11 @@ func (cfg *Config) parseEquip(file string) error {
 		return err
 	}
 
-	for _, line := range lines {
+	for i, line := range lines {
+		if i == 0 {
+			continue
+		}
+
 		id, err := strconv.Atoi(line[0])
 		if err != nil {
 			return err
@@ -152,7 +160,6 @@ func (cfg *Config) parseEquip(file string) error {
 }
 
 func (cfg *Config) parsePlayer(file string) error {
-	//player := make(map[int]CfgPlayer)
 	f, err := os.Open(file)
 	defer f.Close()
 	if err != nil {
@@ -162,8 +169,12 @@ func (cfg *Config) parsePlayer(file string) error {
 	if err != nil {
 		return err
 	}
+	for i, line := range lines {
+		if i == 0 {
+			//continue
+		}
+		fmt.Printf("=%d==%v\n", i, line)
 
-	for _, line := range lines {
 		id, err := strconv.Atoi(line[0])
 		if err != nil {
 			return err

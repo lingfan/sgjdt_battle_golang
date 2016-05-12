@@ -36,6 +36,7 @@ func NewPlayer(name string, power float64, interlligence float64, command float6
 	return p
 }
 
+//ID,名称,初始武力,等级,平均星级,铁匠铺等级,陷阱等级,平均装备等级,士兵ID
 func (p *Player) decipher(code string) {
 	arr := strings.Split(code, ",")
 	p.Name = arr[0]
@@ -196,6 +197,6 @@ func (p *Player) IsAllDead() bool {
 		}
 	}
 
-	fmt.Printf("%s 的部队 全挂了\n", p.Name)
+	//fmt.Printf("%s 的部队 全挂了\n", p.Name)
 	return true
 }
